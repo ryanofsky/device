@@ -26,13 +26,13 @@ struct NoIO
   static int nextval;
 
   template<typename Device, typename Register>
-  static int read(Device & dev, Register & reg)
+  static int read(Device &, Register &)
   {
     return 0;
   }
 
   template<typename Device, typename Register>  
-  static int write(Device & dev, Register & reg)
+  static int write(Device &, Register &)
   {
     return 0;
   }
