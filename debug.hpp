@@ -26,24 +26,36 @@ struct DebugIO
   static int read(Device & dev, Register & reg)
   {
     int ret = CHAIN_IO::read(dev, reg);
-    int current;
-    reg.get(current);
-
     cout << "Device " << &dev << ". Reading register "
-         << typeid(Device).name() << ". Value = " << current << endl;
-
+         << typeid(Device).name() << ". Value = " << reg << endl;
     return ret;
   }
 
   template<typename Device, typename Register>  
   static int write(Device & dev, Register & reg)
   {
-    int current;
-    reg.get(current);
     cout << "Device " << &dev << ". Writing register "
-         << NAME << ". Value = " << current << endl;
+         << ". Value = " << reg << endl;
     return CHAIN_IO::write(dev, reg);
   }
 };
+
+struct printer
+{
+  printer(std::ostream& s) : f_stream(&s) {}
+  template< typename U > void operator()(mpl::identity<U>)
+  {
+    *f_stream << typeid(U).name() << '\n';
+  }
+
+ private:
+    std::ostream* f_stream;
+};
+
+template<typename LIST>
+void PrintList()
+{
+  boost::mpl::for_each<LIST,boost::mpl::make_identity<boost::mpl::_> >(printer(std::cout));
+}
 
 #endif
