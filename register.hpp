@@ -45,8 +45,8 @@ struct Register
   template<unsigned pos, unsigned len, typename INT>
   void get(INT & n)
   {
-    assert((pos + len) / IntBits <= Bits / IntBits);
-    assert(len <= IntBits);
+    BOOST_STATIC_ASSERT((pos + len) / IntBits <= Bits / IntBits);
+    BOOST_STATIC_ASSERT(len <= IntBits);
 
     int p = pos / IntBits;
     int o = pos - p * IntBits;
