@@ -8,6 +8,7 @@
 #include <boost/mpl/identity.hpp>
 #include <boost/mpl/int_c.hpp>
 #include <boost/mpl/arithmetic/plus.hpp>
+#include <boost/mpl/apply.hpp>
 
 using namespace std;
 namespace mpl = boost::mpl;
@@ -51,7 +52,7 @@ struct IndexIO
   template<typename Device, typename Register>
   static int read(Device & dev, Register & reg)
   {
-    dev.set<IndexVar>(index))
+    dev.template set<IndexVar>(index);
     dev.write<IndexVar>();
     return RegIO::read(dev, reg);
   }
@@ -59,7 +60,7 @@ struct IndexIO
   template<typename Device, typename Register>  
   static int write(Device & dev, Register & reg)
   {
-    dev.set<IndexVar>(index))
+    dev.template set<IndexVar>(index);
     dev.write<IndexVar>();
     return RegIO::write(dev, reg);
   }
@@ -245,7 +246,7 @@ struct Variable
   static type get(DEVICE & dev)
   {
     verify();
-    Register & reg = dev.reg<Register>();
+    Register & reg = dev.template reg<Register>();
     type result;
     reg.get(result, FirstBit, LastBit - FirstBit + 1);
     return result;
@@ -255,27 +256,27 @@ struct Variable
   static void set(DEVICE & dev, type i)
   {
     verify();
-    Register & reg = dev.reg<Register>();
+    Register & reg = dev.template reg<Register>();
     reg.set(i, FirstBit, LastBit - FirstBit + 1);
   }
   
   template<typename DEVICE>
   static void read(DEVICE & dev)
   {
-    dev.reg<Register>().read(dev);
+    dev.template reg<Register>().read(dev);
   }
   
 
   template<typename DEVICE>
   static void write(DEVICE & dev)
   {
-    dev.reg<Register>().write(dev);
+    dev.template reg<Register>().write(dev);
   }
 };
 
 
 template<typename T>
-struct is_sequence : public mpl::bool_c<boost::is_same<T::tag, mpl::aux::list_tag >::value>
+struct is_sequence : public mpl::bool_c<boost::is_same<typename T::tag, mpl::aux::list_tag >::value>
 {};
 
 /*
@@ -442,13 +443,13 @@ struct ScFun
 template<typename Sequence>
 struct HoldClass
 {
-  typedef mpl::fold<Sequence, EmptyType, ScFun>::type type;
+  typedef typename mpl::fold<Sequence, EmptyType, ScFun>::type type;
 };
 
 template<typename REGISTER_LIST, typename ACTUAL>
 struct DeviceBase : public HoldClass<REGISTER_LIST>::type
 {
-  typedef HoldClass<REGISTER_LIST>::type Parent;
+  typedef typename HoldClass<REGISTER_LIST>::type Parent;
 
   template<typename REGISTER>
   REGISTER & reg()
@@ -483,26 +484,21 @@ struct Mouse : DeviceBase< mpl::list1<ControlReg>, Mouse >
 {
 };
 
-
-
-
-
-
 template<typename It, typename End>
-struct for_each_impl
+struct for_each_fold_impl
 {
   template<typename State, typename ForwardOp, typename Functor>
   void operator()(Functor & f)
   {
     f.operator()<typename It::type, State>();
-    for_each_impl<It::next, End> next;
-    typedef mpl::apply2<ForwardOp, State, It::type>::type NextState;
-    next<NextState, ForwardOp>(f);
+    for_each_fold_impl<typename It::next, End> next;
+    typedef typename mpl::apply2<ForwardOp, State, typename It::type>::type NextState;
+    next.operator()<NextState, ForwardOp>(f);
   }
 };
 
 template<typename End>
-struct for_each_impl<End, End>
+struct for_each_fold_impl<End, End>
 {
   template<typename State, typename ForwardOp, typename Functor>
   void operator()(Functor &)
@@ -510,9 +506,9 @@ struct for_each_impl<End, End>
 };
 
 template<typename Sequence, typename State, typename ForwardOp, typename Functor>
-void for_each(Functor & f)
+void for_each_fold(Functor & f)
 {
-  for_each_impl<mpl::begin<Sequence>::type, mpl::end<Sequence>::type> first;
+  for_each_fold_impl<typename mpl::begin<Sequence>::type, typename mpl::end<Sequence>::type> first;
   first.operator()<State, ForwardOp>(f);
 };
 
@@ -528,9 +524,19 @@ struct Print
 int main()
 {
 	typedef mpl::list3<int, short, char> l;
+
+typedef mpl::int_c<22> n0;
+typedef mpl::int_c<13> n1;
+
+typedef mpl::plus<n0, n1> sm;
+
+cout << sm::type::value << endl;
+
+
 	Print p;
-	for_each<l, mpl::int_c<0>, mpl::plus<mpl::_1, mpl::_2> >(p);
-	
+    typedef mpl::lambda<mpl::plus<mpl::_1, mpl::int_c<1> > >::type inc;
+	for_each_fold<l, mpl::int_c<0>, inc>(p);
+
 	
 	
 	
