@@ -2,60 +2,11 @@
 #define util_hpp
 
 #include <boost/type_traits/object_traits.hpp>
-
-#   define AUX_VECTOR_PARAMS(param) \
-    BOOST_PP_ENUM_PARAMS( \
-          BOOST_MPL_LIMIT_VECTOR_SIZE \
-        , param \
-        ) \
-
-
-// this is a temporary kludge that will have to suffice until a real
-// is_sequence method gets added to MPL. 
-// It is not implemented using boost's is_convertible type trait
-// because that can't match against template classs. Instead it uses
-// a tweaked version of the Conversion metafunction described in MC++D
-template<typename T>
-struct is_sequence
-{
-  typedef char Small;
-  class Big { char dummy[2]; };
-  template<typename VAR, typename par, typename mar>
-  static Small Test(boost::mpl::list_node<VAR, par, mar>);
-
-  template<typename VAR>
-  static Small Test(boost::mpl::vector0<VAR>);
-
-  template<typename VAR, VAR Start, VAR Finish>
-  static Small Test(boost::mpl::range_c<VAR, Start, Finish>);
-
-#if defined(BOOST_NO_TEMPLATE_PARTIAL_SPECIALIZATION)
-  template<AUX_VECTOR_PARAMS(typename U)>
-  static Small Test(boost::mpl::vector_impl<AUX_VECTOR_PARAMS(typename U)>);
-#endif
-
-  static Big Test(...);
-  static T MakeT();
-  enum { value = sizeof(Test(MakeT())) == sizeof(Small) };  
-};
-
-/*
-template<typename T>
-struct is_sequence
-{
-  enum { value = false };
-};
-
-template<typename T, typename U, typename V>
-struct is_sequence<
-is_same<mpl::aux::list_tag>
-
-mpl::list_node<T, U, V> >
-{
-  enum { value = true };
-};
-*/
-/////////////////////////////
+#include <boost/mpl/apply_if.hpp>
+#include <boost/mpl/identity.hpp>
+#include <boost/mpl/push_front.hpp>
+#include <boost/mpl/find.hpp>
+#include <boost/mpl/iter_fold_backward.hpp>
 
 template<typename It, typename End>
 struct for_each_fold_impl
@@ -136,7 +87,7 @@ struct unsorted_unique_op
     < boost::is_same<i, boost::mpl::find<subsequence<begin, i>, i::type>::type>,
       boost::mpl::identity<state>,
       boost::mpl::push_front<state, i::type>
-    > type;
+    >::type type;
   };
 };
 
