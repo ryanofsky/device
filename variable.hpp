@@ -120,6 +120,10 @@ struct IdentityClass
 
 //typedef boost::mpl::lambda<boost::mpl::identity<boost::mpl::_> > IdentityClass;
 
+template<typename A, typename B>
+struct append : boost::mpl::fold_backward<A, B
+  boost::mpl::push_front<boost::mpl::_1, boost::mpl::_2> >;
+{};
 
 template<typename REGISTERS>
 struct Variable
@@ -129,6 +133,12 @@ struct Variable
   typedef mpl::fold<Registers, boost::mpl::int_c<0>, aux::Sum>::type Width;
   
   typedef unsorted_unique<boost::mpl::transform<Registers, aux::GetRegister>::type> AccessList;
+  
+  template<typename REGISTER_LIST>
+  struct apply
+  {
+    typedef boost::mpl::push_front<REGISTER_LIST>::type type;
+  }
   
   static void verify()
   {
