@@ -82,7 +82,7 @@ namespace aux
       RegInfo::verify();
       RegInfo::Register & reg = device.reg<RegInfo::Register>();
       INTEGER result;
-      reg.get(result, RegInfo::FirstBit, RegInfo::Width);
+      reg.get<RegInfo::FirstBit, RegInfo::Width>(result);
       value |= result << Position::value;
       return;
     }
@@ -102,7 +102,7 @@ namespace aux
     {
       RegInfo::verify();
       RegInfo::Register & reg = device.reg<RegInfo::Register>();
-      reg.set(value >> Position::value, RegInfo::FirstBit, RegInfo::Width);
+      reg.set<RegInfo::FirstBit, RegInfo::Width>(value >> Position::value);
       return;
     }
   };
@@ -125,7 +125,7 @@ template<typename REGISTERS>
 struct Variable
 {
   typedef mpl::if_<is_sequence<REGISTERS>, REGISTERS, mpl::list<REGISTERS> >::type Registers;
-  typedef unsigned int Integer;
+  typedef unsigned Integer;
   typedef mpl::fold<Registers, boost::mpl::int_c<0>, aux::Sum>::type Width;
   
   typedef unsorted_unique<boost::mpl::transform<Registers, aux::GetRegister>::type> AccessList;
