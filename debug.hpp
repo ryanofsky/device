@@ -5,7 +5,7 @@ template<int BITS, typename IO>
 ostream & operator<<(ostream & out, Register<BITS, IO> const & reg)
 {
   char str[BITS+1];
-  const int d = 8*sizeof(unsigned int);
+  const int d = 8*sizeof(unsigned);
   for (int i = 0; i < BITS; ++i)
     str[BITS-i-1] = (reg.cache[i / d] & 1 << (i % d)) ? '1' : '0';
   str[BITS] = 0;
