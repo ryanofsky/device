@@ -4,66 +4,65 @@
 template<int BITS, typename IO>
 struct Register
 {
-  enum { IntBits = 8 * sizeof(unsigned int) };
+  enum { IntBits = 8 * sizeof(unsigned) };
   enum { CacheDim = (BITS + IntBits - 1)/IntBits };
-  unsigned int cache[CacheDim];
+  unsigned cache[CacheDim];
 
   enum { Bits = BITS };
   typedef IO Io;
 
-  template<typename INT>
-  void set(INT n, unsigned int pos = 0, unsigned int len = 8*sizeof(INT))
+  template<unsigned pos, unsigned len, typename INT>
+  void set(INT n)
   {
-    BOOST_STATIC_ASSERT(sizeof(INT) <= sizeof(unsigned int));
-    assert(pos + len <= Bits);
-    assert(len <= IntBits);
+    BOOST_STATIC_ASSERT(sizeof(INT) <= sizeof(unsigned));
+    BOOST_STATIC_ASSERT(pos + len <= Bits);
+    BOOST_STATIC_ASSERT(len <= IntBits);
     
     INT nMask = ~0;
     n &= ~(nMask << len);
     
     int p = pos / IntBits;
-    int offset = pos - p * IntBits;
-    int leftover = offset + len - IntBits;
+    int o = pos - p * IntBits;
+    int leftover = o + len - IntBits;
 
-    unsigned int mask = ~0;
-    unsigned int bits = n;
-    bits <<= offset;
+    unsigned mask = ~0;
+    unsigned bits = (n & ~(mask << len)) << o;
 
     if (leftover > 0)
     {
-      cache[p] = (cache[p] & ~(mask << offset)) | bits;
+      cache[p] = (cache[p] & ~(mask << o)) | bits;
       ++p;
-      bits = n >> (IntBits - offset);
+      bits = n >> (IntBits - o);
       cache[p] = (cache[p] & (mask << leftover)) | bits;
     }
     else
     {
-      unsigned int m = (mask << offset) & (mask >> -leftover);
+      unsigned m = (mask << o) & (mask >> -leftover);
       cache[p] = (cache[p] & ~m) | bits;
     }
   }
   
-  template<typename INT>
-  void get(INT & n, unsigned int pos = 0, unsigned int len = 8*sizeof(INT))
+  template<unsigned pos, unsigned len, typename INT>
+  void get(INT & n)
   {
-    assert(pos + len <= Bits);
+    assert((pos + len) / IntBits <= Bits / IntBits);
     assert(len <= IntBits);
 
     int p = pos / IntBits;
-    int offset = pos - p * IntBits;
-    int leftover = offset + len - IntBits;
+    int o = pos - p * IntBits;
+    int leftover = o + len - IntBits;
 
-    unsigned int mask = ~0;
+    unsigned mask = ~0;
 
     if (leftover > 0)
     {
-      n = cache[p] >> offset;
-      n |= (cache[p+1] & ~(mask << leftover)) << (IntBits - offset);
+      n = cache[p] >> o;
+      n |= (cache[p+1] & ~(mask << leftover)) << (IntBits - o);
     }
     else
     {
-      unsigned int m = (mask << offset) & (mask >> -leftover);
-      n = (cache[p] & (mask >> -leftover)) >> offset;
+      unsigned m = (mask << o) & (mask >> -leftover);
+      n = (cache[p] & (mask >> -leftover)) >> o;
     }
   }
   
