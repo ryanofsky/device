@@ -20,6 +20,7 @@ namespace mpl = boost::mpl;
 #include "register.hpp"
 #include "io.hpp"
 #include "debug.hpp"
+#include "device.hpp"
 
 int NoIO::nextval = 0;
 
@@ -27,9 +28,7 @@ typedef Register<18, DebugIO<NoIO> > ControlReg;
 typedef Variable<AtRegister<ControlReg, 16, 17> > High;
 typedef Variable<AtRegister<ControlReg, 0, 7> > X;
 typedef Variable<AtRegister<ControlReg, 8, 15> > Y;
-
-typedef Variable<mpl::vector<AtRegister<ControlReg, 16, 17>, AtRegister<ControlReg, 0, 1> > >
- Z;
+typedef Variable<mpl::vector<AtRegister<ControlReg, 16, 17>, AtRegister<ControlReg, 0, 1> > > Z;
 
 struct Mouse : Device< mpl::vector<ControlReg>, Mouse>
 {
@@ -37,15 +36,31 @@ struct Mouse : Device< mpl::vector<ControlReg>, Mouse>
 
 int main()
 {
-  Mouse m;
+  Mouse mouse;
   
   mouse.set<X>(-1);
+  cout << "rg: " << mouse.reg<ControlReg>() << endl;
+  cout << "x = " << hex << mouse.get<X>() << endl;
+  cout << "z = " << hex << mouse.get<Z>() << endl;
+  mouse.set<X>(0);
   
-  cout << mouse.reg<ControlReg>() << endl;
-
+  mouse.set<Y>(-1);
+  cout << "rg: " << mouse.reg<ControlReg>() << endl;
+  cout << "y = " << hex << mouse.get<Y>() << endl;
+  cout << "z = " << hex << mouse.get<Z>() << endl;
+  mouse.set<Y>(0);
+  
+  mouse.set<Z>(-1);
+  cout << "rg: " << mouse.reg<ControlReg>() << endl;
+  cout << "x = " << hex << mouse.get<X>() << endl;
+  cout << "y = " << hex << mouse.get<Y>() << endl;
+  cout << "z = " << hex << mouse.get<Z>() << endl;
+  mouse.set<Z>(0);
+  
+  //mouse.read<X>();
+  mouse.write<Y>();
 
 /*
-  
   m.set<Z>(-1);
   
   cout << m.reg<ControlReg>() << endl;
