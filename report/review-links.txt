@@ -1,0 +1,24 @@
+vault
+http://research.microsoft.com/vault/
+
+gal
+http://compose.labri.fr/prototypes/gal/
+
+devil
+http://compose.labri.fr/prototypes/devil/
+http://compose.labri.fr/documentation/papers/osdi00.pdf
+
+
+slam
+http://research.microsoft.com/slam/
+
+vmware nic driver 
+http://lxr.linux.no/source/drivers/net/pcnet32.c
+
+linux driver
+http://www.xml.com/ldd/chapter/book/
+
+http://www.compuware.com/products/driverstudio/ds/dworks.htm
+http://osl.iu.edu/~teldhui/papers/
+
+[1] 
