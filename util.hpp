@@ -117,6 +117,49 @@ struct HoldClass
 };
 
 //////////////////////////////////////////////////////
+
+template<typename begin_, typename end_>
+struct subsequence
+{
+  struct tag;
+  typedef begin_ begin;
+  typedef end_ end;
+};
+
+template<typename begin>
+struct unsorted_unique_op
+{
+  template<typename state, typename i>
+  struct apply
+  {
+    typedef boost::mpl::apply_if
+    < boost::is_same<i, boost::mpl::find<subsequence<begin, i>, i::type>::type>,
+      boost::mpl::identity<state>,
+      boost::mpl::push_front<state, i::type>
+    > type;
+  };
+};
+
+template<typename sequence>
+struct unsorted_unique
+{
+  typedef boost::mpl::begin<sequence>::type begin;
+  typedef boost::mpl::end<sequence>::type end;
+  
+  typedef boost::mpl::iter_fold_backward
+  < sequence,
+    boost::mpl::clear<sequence>::type,
+    unsorted_unique_op<begin>
+  >::type type;
+};
+
+
+
+
+
+
+
+
 /*
 begin<Sequence>::type
 ==
