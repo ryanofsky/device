@@ -9,6 +9,8 @@
 #include <boost/mpl/int_c.hpp>
 #include <boost/mpl/arithmetic/plus.hpp>
 #include <boost/mpl/apply.hpp>
+#include <boost/mpl/vector.hpp>
+#include <boost/mpl/range_c.hpp>
 
 using namespace std;
 namespace mpl = boost::mpl;
@@ -27,6 +29,8 @@ struct AtRegister
   typedef REGISTER Register;
   enum { FirstBit = FIRSTBIT , LastBit = LASTBIT };
   enum { Width = LASTBIT - FIRSTBIT + 1 };
+  enum { value = Width };
+  
   static void verify()
   {
     BOOST_STATIC_ASSERT(Register::Bits > LastBit);
@@ -49,25 +53,41 @@ struct reader
   void operator()()
   {
     RegInfo::verify();
-    Register & reg = dev.reg<RegInfo::Register>();
+    RegInfo::Register & reg = device.reg<RegInfo::Register>();
     INTEGER result;
     reg.get(result, RegInfo::FirstBit, RegInfo::Width);
-    i |= result << Position::value;
+    value |= result << Position::value;
     return;
   }
 };
 
-typedef mpl::lambda<mpl::plus<mpl::_1, mpl::_2::Width > >::type inc;
+template<typename DEVICE, typename INTEGER>
+struct writer
+{
+  DEVICE & device;
+  INTEGER & value;
 
+  writer(DEVICE & device_, INTEGER & value_)
+  : device(device_), value(value_) {}
+  
+  template<typename RegInfo, typename Position>
+  void operator()()
+  {
+    RegInfo::verify();
+    RegInfo::Register & reg = device.reg<RegInfo::Register>();
+    reg.set(value >> Position::value, RegInfo::FirstBit, RegInfo::Width);
+    return;
+  }
+};
 
-BOOST_STATIC_ASSERT(8*sizeof(INTEGER) >= POS + Reg::LastBit - Reg::FirstBit + 1);
-
+typedef mpl::lambda<mpl::plus<mpl::_1, mpl::_2> >::type inc;
 
 template<typename REGISTERS>
 struct SplitVariable
 {
+  typedef mpl::if_<is_sequence<REGISTERS>, REGISTERS, mpl::list<REGISTERS> >::type Registers;
   typedef unsigned int type;
-  typedef mpl::fold<REGISTERS, mpl::int_c<0>, inc>::type Width;
+  typedef mpl::fold<Registers, mpl::int_c<0>, inc>::type Width;
   
   static void verify()
   {
@@ -80,7 +100,7 @@ struct SplitVariable
     verify();
     type v;
     reader<DEVICE, type> r(dev, v);
-    for_each_fold<REGISTERS, mpl::int_c<0>, inc>(p);
+    for_each_fold<Registers, mpl::int_c<0>, inc>(r);
     return v;
   }  
 
@@ -88,8 +108,8 @@ struct SplitVariable
   static void set(DEVICE & dev, type i)
   {
     verify();
-    writer<DEVICE, type> r(dev, i);
-    for_each_fold<REGISTERS, mpl::int_c<0>, inc>(p);
+    writer<DEVICE, type> w(dev, i);
+    for_each_fold<Registers, mpl::int_c<0>, inc>(w);
   }  
 
   template<typename DEVICE>
@@ -106,7 +126,7 @@ struct SplitVariable
 };
 
 template<typename REGISTER_LIST, typename ACTUAL>
-struct DeviceBase : public HoldClass<REGISTER_LIST>::type
+struct Device : public HoldClass<REGISTER_LIST>::type
 {
   typedef typename HoldClass<REGISTER_LIST>::type Parent;
 
@@ -130,12 +150,15 @@ struct DeviceBase : public HoldClass<REGISTER_LIST>::type
   }  
 };
 
-typedef Register<18, DebugIO> ControlReg;
-typedef Variable<ControlReg, 16, 17> High;
-typedef Variable<ControlReg, 0, 7> X;
-typedef Variable<ControlReg, 8, 15> Y;
+typedef Register<18, DebugIO<NoIO> > ControlReg;
+typedef SplitVariable<AtRegister<ControlReg, 16, 17> > High;
+typedef SplitVariable<AtRegister<ControlReg, 0, 7> > X;
+typedef SplitVariable<AtRegister<ControlReg, 8, 15> > Y;
 
-struct Mouse : Device< mpl::list<ControlReg>, Mouse>
+typedef SplitVariable<mpl::vector<AtRegister<ControlReg, 16, 17>, AtRegister<ControlReg, 0, 1> > >
+ Z;
+
+struct Mouse : Device< mpl::vector<ControlReg>, Mouse>
 {
 };
 
@@ -143,6 +166,20 @@ int main()
 {
   Mouse m;
 
+  cout << is_sequence<mpl::vector<int> >::value << endl;
+  cout << is_sequence<mpl::list<int> >::value << endl;  
+  cout << is_sequence<mpl::range_c<int, 5, 10> >::value << endl;  
+  cout << is_sequence<int>::value << endl;
+
+
+/*
+  
+  m.set<Z>(-1);
+  
+  cout << m.reg<ControlReg>() << endl;
+  
+  m.get<Z>();
+  
   cout << m.reg<ControlReg>() << endl;
   
   m.set<High>(0);
@@ -157,6 +194,7 @@ int main()
   m.set<Y>(-1);
   
   cout << m.reg<ControlReg>() << endl;
-	
+
   return 0;
+*/  
 }
