@@ -1,9 +1,3 @@
+CXXFLAGS= "-IM:/Program Files/boost_1_29_0_mpl"
 
-CPPFLAGS = -Wall
-
-main : CC = g++
-main : main.o 
-
-.PHONY : clean
-clean :
-	rm -f main.exe main.o
+hello.exe : hello.o
