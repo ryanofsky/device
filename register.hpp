@@ -67,16 +67,14 @@ struct Register
     }
   }
   
-  void clear()
+  Register()
   {
+    // this can be unrolled
     for (int i = 0; i < CacheDim; ++i)
       cache[i] = 0;
   }
   
-  Register()
-  {
-    IO::init(*this);
-  }
+  // xxx: these should be static methods, are they even being used in their current form?
   
   template<typename DEVICE>
   int read(DEVICE & device)
