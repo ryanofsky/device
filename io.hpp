@@ -1,4 +1,4 @@
-#ifdef io_hpp
+#ifndef io_hpp
 #define io_hpp
 
 template<typename RegIO, typename IndexVar, int index>
