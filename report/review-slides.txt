@@ -10,33 +10,42 @@ outb(MSE_READ_Y_HIGH, MSE_CONTROL_PORT);
 buttons = inb(MSE_DATA_PORT);
 dy |= (buttons & 0xf) << 4;
 
-
-device logitech_busmouse (base : bit[8] port @ {0..3})
+// device 
+device logitech_busmouse (base : bit[8]
+  port @ {0..3})
 {
   // index register 
-  register index_reg = write base @ 2, mask '1..00000' : bit[8];
+  register index_reg = write base @ 2, 
+    mask '1..00000' : bit[8];
   variable index = index_reg[6..5] : int(2);
 
-  register y_low  = read base @ 0, pre {index = 2} : bit[8], mask '****....';
-  register y_high = read base @ 0, pre {index = 3} : bit[8], mask '...*....';
+  // registers for low and high bits
+  register y_low  = read base @ 0, pre 
+    {index = 2} : bit[8], mask '****....';
+  register y_high = read base @ 0, pre
+    {index = 3} : bit[8], mask '...*....';
 
-  variable dy = y_high[3..0] # y_low[3..0], volatile : signed int(8);
-
+  // dy variable
+  variable dy = y_high[3..0] # y_low[3..0],
+    volatile : signed int(8);
 }
 
 dy = get_dy();
 
-/* Base Address, Bit Size, Constraint */
-typedef Register<2, 8, List<ReadOnly, Mask... > > IndexReg;
+typedef Register<2, 8, 
+  List<ReadOnly, Mask... > > IndexReg;
 
-/* Size, Location */
-typedef Variable<2, AtRegister<IndexReg, 6, 5> > Index;
+typedef Variable<2, AtRegister<IndexReg, 6, 5>
+  > Index;
 
 /* Base Address, Index Register, Index Value, Bit Size, Constraint
-typedef IndexedRegister<0, Index, 2, 8, Mask... > > Y_Low;
-typedef IndexedRegister<0, Index, 3, 8, Mask... > > Y_High;
+typedef IndexedRegister<0, Index, 2, 8,
+  Mask... > > Y_Low;
+typedef IndexedRegister<0, Index, 3, 8,
+  Mask... > > Y_High;
 
-typedef Variable<8, List< AtRegister<Y_Low, 3, 0>,
+typedef Variable<8, List< 
+  AtRegister<Y_Low, 3, 0>,
   AtRegister<Y_High, 3, 0> > > DY;
   
 
@@ -92,6 +101,8 @@ In order to read dy, you have to take the value from a single register in two pa
 
 Y_LOW, Y_HIGH, and you have to use a third index register to 
 
+struct Null;
+
 template<typename T, typename NEXT>
 struct Node
 {
@@ -99,9 +110,9 @@ struct Node
   typedef NEXT next;
 };
 
-struct Null;
 
-Node<int, Node<signed int, Node<unsigned int, Null> > >
+
+typedef Node<int, Node<signed int, Node<unsigned int, Null> > > MyList;
 
 Libraries that use typelists usually provide a shorthand:
 
@@ -114,14 +125,16 @@ struct Length;
 template<>
 struct Length<Null>
 {
-  enum { value = 1 + Length<LIST
+  enum { value = 0 };
 };
 
 template<class T, class U>
 struct Length< TypeList<T, U> >
 {
-
+  enum { value = 1 + Length<U> };
 };
+
+cout << Length<MyList>::value;
   
 
 
