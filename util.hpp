@@ -1,10 +1,51 @@
 #ifndef util_hpp
 #define util_hpp
 
-template<typename T>
-struct is_sequence : public boost::is_same<typename T::tag, mpl::aux::list_tag >
-{};
+#include <boost/type_traits/object_traits.hpp>
 
+// this is a temporary kludge that will have to suffice until a real
+// is_sequence method gets added to MPL. 
+// It is not implemented using boost's is_convertible type trait
+// because that can't match against template classs. Instead it uses
+// a tweaked version of the Conversion metafunction described in MC++D
+template<typename T>
+struct is_sequence
+{
+  typedef char Small;
+  class Big { char dummy[2]; };
+  template<typename VAR, typename par, typename mar>
+  static Small Test(mpl::list_node<VAR, par, mar>);
+
+  // this doesn't detect vector with msvc60
+  // there, vectors inherit from a vector_impl class that takes
+  // different number of types depending on number max params
+  template<typename VAR>
+  static Small Test(mpl::vector0<VAR>);
+
+  template<typename VAR, VAR Start, VAR Finish>
+  static Small Test(mpl::range_c<VAR, Start, Finish>);
+
+  static Big Test(...);
+  static T MakeT();
+  enum { value = sizeof(Test(MakeT())) == sizeof(Small) };  
+};
+
+/*
+template<typename T>
+struct is_sequence
+{
+  enum { value = false };
+};
+
+template<typename T, typename U, typename V>
+struct is_sequence<
+is_same<mpl::aux::list_tag>
+
+mpl::list_node<T, U, V> >
+{
+  enum { value = true };
+};
+*/
 /////////////////////////////
 
 template<typename It, typename End>
