@@ -17,13 +17,13 @@ struct Device : public HoldClass<REGISTER_LIST>::type
   }
   
   template<typename X>
-  typename X::type get()
+  typename X::Integer get()
   {
-    return X::get();
+    return X::get(actual());
   }
 
   template<typename X>
-  void set(typename X::type i)
+  void set(typename X::Integer i)
   {
     X::set(actual(), i);
   }  
