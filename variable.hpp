@@ -1,6 +1,10 @@
 #ifndef variable_hpp
 #define variable_hpp
 
+#include "is_sequence.hpp"
+#include <boost/mpl/transform.hpp>
+#include <boost/mpl/for_each.hpp>
+
 template<typename REGISTER, int FIRSTBIT, int LASTBIT>
 struct AtRegister
 {
@@ -25,8 +29,8 @@ namespace aux
     template<typename T>
     struct apply
     {
-      typedef T::register type;  
-    }  
+      typedef typename T::Register type;  
+    };
   };
 
   template<typename DEVICE>
@@ -34,11 +38,11 @@ namespace aux
   {
     DEVICE & device;
   
-    var_reader(DEVICE & device_)
+    RegisterReader(DEVICE & device_)
     : device(device_) {}
   
     template<typename Register>
-    void operator()()
+    void operator()(boost::mpl::identity<Register>)
     {
       Register & r = device.reg<Register>();
       r.read(device);
@@ -50,11 +54,11 @@ namespace aux
   {
     DEVICE & device;
   
-    var_reader(DEVICE & device_)
+    RegisterWriter(DEVICE & device_)
     : device(device_) {}
   
     template<typename Register>
-    void operator()()
+    void operator()(boost::mpl::identity<Register>)
     {
       Register & r = device.reg<Register>();
       r.write(device);
@@ -69,7 +73,7 @@ namespace aux
     DEVICE & device;
     INTEGER & value;
   
-    reader(DEVICE & device_, INTEGER & value_)
+    VariableGetter(DEVICE & device_, INTEGER & value_)
     : device(device_), value(value_) {}
     
     template<typename RegInfo, typename Position>
@@ -90,7 +94,7 @@ namespace aux
     DEVICE & device;
     INTEGER & value;
   
-    writer(DEVICE & device_, INTEGER & value_)
+    VariableSetter(DEVICE & device_, INTEGER & value_)
     : device(device_), value(value_) {}
     
     template<typename RegInfo, typename Position>
@@ -102,7 +106,20 @@ namespace aux
       return;
     }
   };
+}
+
+
+struct IdentityClass
+{
+  template<typename T>
+  struct apply
+  {
+    typedef boost::mpl::identity<T> type;
+  };
 };
+
+//typedef boost::mpl::lambda<boost::mpl::identity<boost::mpl::_> > IdentityClass;
+
 
 template<typename REGISTERS>
 struct Variable
@@ -115,41 +132,42 @@ struct Variable
   
   static void verify()
   {
-    BOOST_STATIC_ASSERT(Width::value <= 8*sizeof(type));
+    BOOST_STATIC_ASSERT(Width::value <= 8*sizeof(Integer));
   }
   
   template<typename DEVICE>
   static Integer get(DEVICE & dev)
   {
     verify();
-    Integer v;
-    reader<DEVICE, type> r(dev, v);
+    Integer v(0);
+    aux::VariableGetter<DEVICE, Integer> r(dev, v);
     for_each_fold<Registers, boost::mpl::int_c<0>, aux::Sum>(r);
     return v;
   }  
 
   template<typename DEVICE>
-  static void set(DEVICE & dev, type i)
+  static void set(DEVICE & dev, Integer i)
   {
     verify();
-    writer<DEVICE, type> w(dev, i);
-    for_each_fold<Registers, mpl::int_c<0>, inc>(w);
+    aux::VariableSetter<DEVICE, Integer> w(dev, i);
+    for_each_fold<Registers, mpl::int_c<0>, aux::Sum>(w);
   }  
 
   template<typename DEVICE>
   static void read(DEVICE & dev)
   {
     verify();
-    VariableReader<DEVICE> r(dev);
-    boost::mpl::for_each<AccessList>(r);    
+    aux::RegisterReader<DEVICE> r(dev);
+    boost::mpl::for_each<AccessList, IdentityClass>(r);    
   }
   
   template<typename DEVICE>
   static void write(DEVICE & dev)
   {
     verify();
-    VariableWriter<DEVICE> r(dev);
-    dev.reg<Register>().write(dev);
+    aux::RegisterWriter<DEVICE> w(dev);
+    PrintList<AccessList>();
+    boost::mpl::for_each<AccessList, IdentityClass>(w);    
   }
 };
 
