@@ -19,6 +19,6 @@ linux driver
 http://www.xml.com/ldd/chapter/book/
 
 http://www.compuware.com/products/driverstudio/ds/dworks.htm
-http://osl.iu.edu/~teldhui/papers/
+http://osl.iu.edu/~tveldhui/papers/
 
 [1] 
