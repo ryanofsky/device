@@ -1,0 +1,135 @@
+#define MSE_DATA_PORT 0x23c
+#define MSE_SIGNATURE_PORT 0x23d
+#define MSE_CONTROL_PORT 0x23e
+#define MSE_READ_Y_LOW 0x80
+#define MSE_READ_Y_HIGH 0xa0
+
+outb(MSE_READ_Y_LOW, MSE_CONTROL_PORT );
+dy = (inb(MSE_DATA_PORT) & 0xf);
+outb(MSE_READ_Y_HIGH, MSE_CONTROL_PORT);
+buttons = inb(MSE_DATA_PORT);
+dy |= (buttons & 0xf) << 4;
+
+
+device logitech_busmouse (base : bit[8] port @ {0..3})
+{
+  // index register 
+  register index_reg = write base @ 2, mask '1..00000' : bit[8];
+  variable index = index_reg[6..5] : int(2);
+
+  register y_low  = read base @ 0, pre {index = 2} : bit[8], mask '****....';
+  register y_high = read base @ 0, pre {index = 3} : bit[8], mask '...*....';
+
+  variable dy = y_high[3..0] # y_low[3..0], volatile : signed int(8);
+
+}
+
+dy = get_dy();
+
+/* Base Address, Bit Size, Constraint */
+typedef Register<2, 8, List<ReadOnly, Mask... > > IndexReg;
+
+/* Size, Location */
+typedef Variable<2, AtRegister<IndexReg, 6, 5> > Index;
+
+/* Base Address, Index Register, Index Value, Bit Size, Constraint
+typedef IndexedRegister<0, Index, 2, 8, Mask... > > Y_Low;
+typedef IndexedRegister<0, Index, 3, 8, Mask... > > Y_High;
+
+typedef Variable<8, List< AtRegister<Y_Low, 3, 0>,
+  AtRegister<Y_High, 3, 0> > > DY;
+  
+
+template<...>
+class Variable
+{
+  Variable & operator=(int rvalue)
+  {
+    ... executed whenever variable is assigned an int ...
+  }
+
+  operator int()
+  {
+    ... executed when variable is read from ...
+  }
+};
+
+Speech Notes:
+
+
+Reimplementation of Devil Compiler as a C++ Framework
+- Devil == DEVice Interface Language
+  A Domain Specific Language (DSL) used to help write driver code.
+  Input: Description of hardware using Devil syntax
+  Output: C functions that let programmer access hardware in a high level manner.
+
+- C++ Framework will provide template classes which implement same functionality as Devil.
+  Advantage: All you need is standard C++ compiler, no separate tool
+  Advantage: Should be more easier to extend with plug in classes.
+ 
+ 
+Speech: Project is to implement a C++ library for developing the device drivers. 
+Way I'm going about it is to copy features from a Project Called Devil and reimplement them in a completely different way.
+
+Devil is a compiler that takes __ and produces __
+
+My project will be a C++ library.
+Lets you describe hardware in C++ type declarations.
+Pass types to template classes which can be instantiated and used to access hardware.  
+
+I'll be testing the library by using it to implement a network driver in Linux.
+
+---
+
+Slide 2; Driver Code
+
+Code from a mouse driver. The ONLY thing it does it to read a value dy from the hardware, which is the vertical distance
+moved by the mouse.
+
+defines are hardware addreses
+inb() and outb() function which read and write to registers
+In order to read dy, you have to take the value from a single register in two passes, first request low bits, read low bits, then request high bits, read high bits. This is a very simple example compared to network code.
+
+Y_LOW, Y_HIGH, and you have to use a third index register to 
+
+template<typename T, typename NEXT>
+struct Node
+{
+  typedef T type;
+  typedef NEXT next;
+};
+
+struct Null;
+
+Node<int, Node<signed int, Node<unsigned int, Null> > >
+
+Libraries that use typelists usually provide a shorthand:
+
+  List<int, signed int, unsigned int>
+  
+
+template<typename LIST>
+struct Length;
+
+template<>
+struct Length<Null>
+{
+  enum { value = 1 + Length<LIST
+};
+
+template<class T, class U>
+struct Length< TypeList<T, U> >
+{
+
+};
+  
+
+
+
+
+
+device logitech_busmouse (base : bit[8] port @ {0..3})
+{
+  register y_low  = reg(2), mask '****....';
+  register y_high = reg(3), mask '...*....';
+
