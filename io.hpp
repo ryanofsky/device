@@ -25,17 +25,9 @@ struct NoIO
 {
   static int nextval;
 
-  template<typename Register>
-  static void init(Register & reg)
-  {
-    reg.clear();
-  }
-
   template<typename Device, typename Register>
   static int read(Device & dev, Register & reg)
   {
-    reg.set(nextval);
-    ++nextval;
     return 0;
   }
 
@@ -45,5 +37,12 @@ struct NoIO
     return 0;
   }
 };
+
+// todo: implement these for linux and nt
+template<int offset>
+struct PortIO;
+
+template<int offset>
+struct MemoryIO;
 
 #endif
